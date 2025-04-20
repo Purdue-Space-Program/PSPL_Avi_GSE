@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+WINDOW_NAME="Avi Client"
+
+tmux new-window -n "$WINDOW_NAME" \
+     "python3 gses/command.py"
+
+tmux split-window -h \
+     "python3 gses/bangbang.py"
+
+tmux split-window -v \
+     "python3 gses/telem.py"
+
+tmux select-window -t "$WINDOW_NAME"
