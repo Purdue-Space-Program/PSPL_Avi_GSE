@@ -1,11 +1,13 @@
 from enum import IntEnum
 from struct import calcsize, pack, unpack
 from socket import socket, AF_INET, SOCK_STREAM
-from time import sleep
 from typing import Any
 import configs.constants as constants
 import pandas as pd
 import utils
+
+telem_df   = utils.get_telem_configs()
+command_df = utils.get_command_configs()
 
 class Command(IntEnum):
     SET_FU_UPPER_SETP = 0
@@ -41,32 +43,6 @@ FORMAT_NO_ARGS_SIZE = calcsize(FORMAT_NO_ARGS)
 FORMAT_1_ARG      = '<BQ'
 FORMAT_1_ARG_SIZE = calcsize(FORMAT_1_ARG)
 
-### gets converted to str: (Command, Format)
-command_fmts = {
-    Command.SET_FU_UPPER_SETP: FORMAT_1_ARG,
-    Command.SET_FU_LOWER_SETP: FORMAT_1_ARG,
-    Command.SET_OX_UPPER_SETP: FORMAT_1_ARG,
-    Command.SET_OX_LOWER_SETP: FORMAT_1_ARG,
-    Command.SET_FU_STATE_REGULATE: FORMAT_NO_ARGS,
-    Command.SET_FU_STATE_ISOLATE:  FORMAT_NO_ARGS,
-    Command.SET_FU_STATE_OPEN:     FORMAT_NO_ARGS,
-    Command.SET_OX_STATE_REGULATE: FORMAT_NO_ARGS,
-    Command.SET_OX_STATE_ISOLATE:  FORMAT_NO_ARGS,
-    Command.SET_OX_STATE_OPEN:     FORMAT_NO_ARGS,
-    Command.SET_BB_STATE_REGULATE: FORMAT_NO_ARGS,
-    Command.SET_BB_STATE_ISOLATE:  FORMAT_NO_ARGS,
-    Command.SET_BB_STATE_OPEN:     FORMAT_NO_ARGS,
-    Command.NOOP:                  FORMAT_NO_ARGS,
-    Command.START:                 FORMAT_NO_ARGS,
-    Command.ABORT:                 FORMAT_NO_ARGS,
-    Command.SET_FU_UPPER_REDLINE: FORMAT_1_ARG,
-    Command.SET_FU_LOWER_REDLINE: FORMAT_1_ARG,
-    Command.SET_OX_UPPER_REDLINE: FORMAT_1_ARG,
-    Command.SET_OX_LOWER_REDLINE: FORMAT_1_ARG,
-}
-
-commands = { cmd.name.lower(): (cmd, command_fmts[cmd]) for cmd in command_fmts }
-
 aliases = {
     Command.SET_FU_STATE_REGULATE: ('bb_fu_reg', 'bb_fu_regulate'),
     Command.SET_FU_STATE_ISOLATE:  ('bb_fu_iso', 'bb_fu_isolate'),
@@ -80,17 +56,23 @@ aliases = {
     Command.SET_OX_LOWER_SETP:      'ox_set_lower',
 }
 
+commands = dict()
+
+for _, row in command_df.iterrows():
+    name = str(row['Name']).lower()
+    id   = row['ID']
+
+    commands[name] = id
+
 for cmd, alias in aliases.items():
     if isinstance(alias, tuple):
         for a in alias:
-            commands[a] = (cmd, command_fmts[cmd])
+            commands[a] = int(cmd)
     else:
-        commands[alias] = (cmd, command_fmts[cmd])
+        commands[alias] = int(cmd)
 
 def print_help() -> None:
     print('Help!')
-
-telem_df = utils.get_telem_configs()
 
 def send_command(cmd: str, args: list[Any] | None = None, sock = None) -> Status:
     cmd = cmd.lower()
@@ -100,11 +82,11 @@ def send_command(cmd: str, args: list[Any] | None = None, sock = None) -> Status
 
     match Command(cmd_id):
         case Command.SET_FU_UPPER_SETP | Command.SET_FU_LOWER_SETP | Command.SET_FU_UPPER_REDLINE | Command.SET_FU_LOWER_REDLINE:
-            row = telem_df [telem_df ['Name'] == 'PT-FU-201'].squeeze()
+            row = telem_df[telem_df['Name'] == 'PT-FU-201'].squeeze()
             if args:
                 fargs = [int(((((i - row['Zeroing Offset']) - row['Offset']) / row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
         case Command.SET_OX_UPPER_SETP | Command.SET_OX_LOWER_SETP | Command.SET_OX_UPPER_REDLINE | Command.SET_OX_LOWER_REDLINE:
-            row = telem_df [telem_df ['Name'] == 'PT-OX-201']
+            row = telem_df[telem_df['Name'] == 'PT-OX-201']
             if args:
                 fargs = [int(((((i - row['Zeroing Offset']) - row['Offset']) / row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
 
