@@ -36,10 +36,10 @@ if not constants.TEST_MODE:
 def get_synnax_client():
     return sy_client
 
-telem_config_df = pd.read_excel('gses/configs/CMS_Avionics_Channels.xlsx', sheet_name='telem_channels')
+telem_config_df = pd.read_excel('gse/configs/CMS_Avionics_Channels.xlsx', sheet_name='telem_channels')
 def get_telem_configs():
     return telem_config_df
 
-command_config_df = pd.read_excel('gses/configs/CMS_Avionics_Channels.xlsx', sheet_name='command_channels')
+command_config_df = pd.read_excel('gse/configs/CMS_Avionics_Channels.xlsx', sheet_name='command_channels')
 def get_command_configs():
     return command_config_df

@@ -2,8 +2,10 @@ from enum import IntEnum
 from struct import calcsize, pack, unpack
 from socket import socket, AF_INET, SOCK_STREAM
 from time import sleep
+from typing import Any
 import configs.constants as constants
 import pandas as pd
+import utils
 
 class Command(IntEnum):
     SET_FU_UPPER_SETP = 0
@@ -33,7 +35,7 @@ class Status(IntEnum):
     TOO_MANY_ARGS   = 2
     UNRECOGNIZED_COMMAND = 3
 
-FORMAT_NO_ARGS      = 'B'
+FORMAT_NO_ARGS      = '<B'
 FORMAT_NO_ARGS_SIZE = calcsize(FORMAT_NO_ARGS)
 
 FORMAT_1_ARG      = '<BQ'
@@ -88,25 +90,26 @@ for cmd, alias in aliases.items():
 def print_help() -> None:
     print('Help!')
 
-df = pd.read_excel('gses/configs/CMS_Avionics_Channels.xlsx', 'telem_channels')
+telem_df = utils.get_telem_configs()
 
-def send_command(cmd: str, args: list[str] | None = None, sock = None) -> Status:
+def send_command(cmd: str, args: list[Any] | None = None, sock = None) -> Status:
     cmd = cmd.lower()
-    int_args = [float(a) for a in args] if args else []
+    fargs = [float(a) for a in args] if args else []
 
     cmd_id = commands[cmd][0].value
 
     match Command(cmd_id):
         case Command.SET_FU_UPPER_SETP | Command.SET_FU_LOWER_SETP | Command.SET_FU_UPPER_REDLINE | Command.SET_FU_LOWER_REDLINE:
-            row = df[df['Name'] == 'PT-FU-201']
+            row = telem_df [telem_df ['Name'] == 'PT-FU-201'].squeeze()
             if args:
-                int_args = [int(((((i + 46.0258 - 14.7 - 8.3) - row['Offset'].iloc[0]) / row['Slope'].iloc[0]) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in int_args]
+                fargs = [int(((((i - row['Zeroing Offset']) - row['Offset']) / row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
         case Command.SET_OX_UPPER_SETP | Command.SET_OX_LOWER_SETP | Command.SET_OX_UPPER_REDLINE | Command.SET_OX_LOWER_REDLINE:
-            row = df[df['Name'] == 'PT-OX-201']
+            row = telem_df [telem_df ['Name'] == 'PT-OX-201']
             if args:
-                int_args = [int(((((i + 47.0573 - 14.7 - 8.3) - row['Offset'].iloc[0]) / row['Slope'].iloc[0]) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in int_args]
+                fargs = [int(((((i - row['Zeroing Offset']) - row['Offset']) / row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
 
-    packet = pack(commands[cmd.lower()][1], cmd_id, *int_args)
+    packet = pack(commands[cmd.lower()][1], cmd_id, *fargs)
+    print(unpack(FORMAT_1_ARG, packet))
     if sock:
         sock.send(packet)
 
@@ -118,7 +121,7 @@ def send_command(cmd: str, args: list[str] | None = None, sock = None) -> Status
             s.send(packet)
 
             val = int.from_bytes(s.recv(1), byteorder='big')
-            return Status(val)
+    return Status(val)
 
 if __name__ == '__main__':
     try:

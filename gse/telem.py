@@ -66,11 +66,12 @@ def main():
                             case Channel.PT_OX | Channel.PT_FU | Channel.PT_HE:
                                 deser_packet = unpack('<Qi4xQ', p)
 
-                        value = deser_packet[1]
-                        row   = df[df['ID'].astype(str) == str(id)].squeeze()
+                        value = float(deser_packet[1])
+                        row   = df[df['ID'] == id].squeeze()
                         name  = row['Name']
-                        if not bool(pd.isna(row['Slope'])):
-                            value = (((value * constants.ADC_V_SLOPE) - constants.ADC_V_OFFSET) * row['Slope']) + row['Offset'] + row['Zeroing Offset']
+
+                        if row.get('Slope', None) is not None:
+                            value = (((int(value) * constants.ADC_V_SLOPE) + constants.ADC_V_OFFSET) * row['Slope']) + row['Offset'] + row['Zeroing Offset']
 
                         writer.write({
                             name: value,
