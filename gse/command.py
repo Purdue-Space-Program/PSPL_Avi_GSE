@@ -37,12 +37,6 @@ class Status(IntEnum):
     TOO_MANY_ARGS   = 2
     UNRECOGNIZED_COMMAND = 3
 
-FORMAT_NO_ARGS      = '<B'
-FORMAT_NO_ARGS_SIZE = calcsize(FORMAT_NO_ARGS)
-
-FORMAT_1_ARG      = '<BQ'
-FORMAT_1_ARG_SIZE = calcsize(FORMAT_1_ARG)
-
 aliases = {
     Command.SET_FU_STATE_REGULATE: ('bb_fu_reg', 'bb_fu_regulate'),
     Command.SET_FU_STATE_ISOLATE:  ('bb_fu_iso', 'bb_fu_isolate'),
@@ -78,32 +72,29 @@ def send_command(cmd: str, args: list[Any] | None = None, sock = None) -> Status
     cmd = cmd.lower()
     fargs = [float(a) for a in args] if args else []
 
-    cmd_id = commands[cmd][0].value
+    cmd_id = commands[cmd]
+    c_row = command_df[command_df['ID'] == cmd_id].squeeze()
 
     match Command(cmd_id):
         case Command.SET_FU_UPPER_SETP | Command.SET_FU_LOWER_SETP | Command.SET_FU_UPPER_REDLINE | Command.SET_FU_LOWER_REDLINE:
-            row = telem_df[telem_df['Name'] == 'PT-FU-201'].squeeze()
+            cmd_row = telem_df[telem_df['Name'] == 'PT-FU-201'].squeeze()
             if args:
-                fargs = [int(((((i - row['Zeroing Offset']) - row['Offset']) / row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
+                fargs = [int(((((i - cmd_row['Zeroing Offset']) - cmd_row['Offset']) / cmd_row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
         case Command.SET_OX_UPPER_SETP | Command.SET_OX_LOWER_SETP | Command.SET_OX_UPPER_REDLINE | Command.SET_OX_LOWER_REDLINE:
-            row = telem_df[telem_df['Name'] == 'PT-OX-201']
+            cmd_row = telem_df[telem_df['Name'] == 'PT-OX-201']
             if args:
-                fargs = [int(((((i - row['Zeroing Offset']) - row['Offset']) / row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
+                fargs = [int(((((i - cmd_row['Zeroing Offset']) - cmd_row['Offset']) / cmd_row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
 
-    packet = pack(commands[cmd.lower()][1], cmd_id, *fargs)
-    print(unpack(FORMAT_1_ARG, packet))
+    packet = pack('<B' + ('Q' * c_row['Num Args']), cmd_id, *fargs)
     if sock:
         sock.send(packet)
-
-        val = int.from_bytes(sock.recv(1), byteorder='big')
+        ret = sock.recv(1)
     else:
         with socket(AF_INET, SOCK_STREAM) as s:
             s.connect((constants.AVI_IP, constants.AVI_CMD_PORT))
-
             s.send(packet)
-
-            val = int.from_bytes(s.recv(1), byteorder='big')
-    return Status(val)
+            ret = s.recv(1)
+    return Status(int.from_bytes(ret, byteorder='big'))
 
 if __name__ == '__main__':
     try:
