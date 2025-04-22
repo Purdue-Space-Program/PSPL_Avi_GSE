@@ -17,7 +17,7 @@ class CommandHandler(socketserver.BaseRequestHandler):
 
         for n in nums:
             if tlm_row.get('Slope', None) is not None:
-                n = (((n * ADC_V_SLOPE) - ADC_V_OFFSET) * tlm_row['Slope']) + tlm_row['Offset'] + tlm_row['Zeroing Offset']
+                n = (((n * ADC_V_SLOPE) + ADC_V_OFFSET) * tlm_row['Slope']) + tlm_row['Offset'] + tlm_row['Zeroing Offset']
                 print(n)
 
 
