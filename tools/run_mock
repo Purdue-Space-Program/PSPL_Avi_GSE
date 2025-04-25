@@ -8,4 +8,6 @@ tmux new-window -n "$WINDOW_NAME" \
 tmux split-window -h \
      "python3 -m gse.mock.test_cmd_server"
 
+./run
+
 # tmux select-window -t "$WINDOW_NAME"
