@@ -1,6 +1,6 @@
 import socketserver
-import utils
-from configs.constants import ADC_V_SLOPE, ADC_V_OFFSET
+import gse.utils as utils
+from gse.configs.constants import ADC_V_SLOPE, ADC_V_OFFSET
 
 command_df = utils.get_command_configs()
 telem_df   = utils.get_telem_configs()

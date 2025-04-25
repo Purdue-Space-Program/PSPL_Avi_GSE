@@ -1,6 +1,6 @@
-import command as cmd
-import configs.constants as constants
-from utils import get_logger, get_synnax_client
+import gse.command as cmd
+import gse.configs.constants as constants
+from gse.utils import get_logger, get_synnax_client
 log = get_logger('Command Proxy')
 
 client = get_synnax_client()

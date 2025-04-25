@@ -1,12 +1,11 @@
 from socket import socket, AF_INET, SOCK_STREAM
 from struct import unpack
 from enum import IntEnum
-import configs.constants as constants
-from configs.constants import TELEM_FORMAT, TELEM_SIZE, SYNNAX_IP, SYNNAX_PORT, AVI_IP, AVI_CMD_PORT, AVI_TELEM_PORT
+import gse.configs.constants as constants
+from gse.configs.constants import TELEM_FORMAT, TELEM_SIZE, SYNNAX_IP, SYNNAX_PORT, AVI_IP, AVI_CMD_PORT, AVI_TELEM_PORT
 import synnax as sy
-import pandas as pd
 
-from utils import get_logger, get_synnax_client, get_telem_configs
+from gse.utils import get_logger, get_synnax_client, get_telem_configs
 log = get_logger('Telemtry')
 
 class Channel(IntEnum):
@@ -81,7 +80,6 @@ def main():
                 pass
             finally:
                 s.close()
-                writer.close()
 
 if __name__ == '__main__':
     main()

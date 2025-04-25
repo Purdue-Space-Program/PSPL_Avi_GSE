@@ -3,12 +3,12 @@
 WINDOW_NAME="Avi Client"
 
 tmux new-window -n "$WINDOW_NAME" \
-     "python3 gse/command.py"
+     "python3 -m gse.command"
 
 tmux split-window -h \
-     "python3 gse/bangbang.py"
+     "python3 -m gse.bangbang"
 
 tmux split-window -v \
-     "python3 gse/telem.py"
+     "python3 -m gse.telem"
 
 tmux select-window -t "$WINDOW_NAME"
