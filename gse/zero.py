@@ -1,39 +1,28 @@
-import synnax as sy
 import configs.constants as constants
-import logging
-log = logging.getLogger(' Zeroer')
-logging.basicConfig(level=logging.INFO)
+from utils import get_logger, get_telem_configs, get_synnax_client
+log = get_logger('Zeroer')
+telem_df = get_telem_configs()
 
 NUM_SAMPLES = 1000
-ZEROING_TARGET = 14.7
 
-client = sy.Synnax(
-    host=constants.SYNNAX_IP,
-    port=constants.SYNNAX_PORT,
-    username="Bill",
-    password="Bill",
-    secure=False,
-)
-log.info(f' Connected to Synnax at {constants.SYNNAX_IP}:{constants.SYNNAX_PORT}')
+client = get_synnax_client()
+log.info(f'Connected to Synnax at {constants.SYNNAX_IP}:{constants.SYNNAX_PORT}')
 
-with client.open_streamer([constants.LOX_CHANNEL_NAME, constants.FUEL_CHANNEL_NAME, constants.HELIUM_CHANNEL_NAME]) as s:
-    counts  = [0, 0, 0]
-    sums    = [0.0, 0.0, 0.0]
+channel_list = list(telem_df['Name'])
 
-    for frame in s:
-        for f in frame[constants.LOX_CHANNEL_NAME]:
-            counts[0] += 1
-            sums[0]   += f
-        for f in frame[constants.FUEL_CHANNEL_NAME]:
-            counts[1] += 1
-            sums[1]   += f
+def main():
+    # key : [count, sum]
+    channel_avgs = { ch : [0, 0.0] for ch in channel_list }
+    with client.open_streamer(channel_list) as s:
+        for frame in s:
+            for ch in channel_list:
+                for f in frame[ch]:
+                    channel_avgs[ch][0] += 1 # count
+                    channel_avgs[ch][1] += f # sum
 
-        for f in frame[constants.HELIUM_CHANNEL_NAME]:
-            counts[2] += 1
-            sums[2]   += f
-        if any(c >= NUM_SAMPLES for c in counts):
-            break
+    for ch in channel_list:
+        vals = channel_avgs[ch]
+        log.info(f'{ch}: {vals[1] / vals[0]}')
 
-print(f'lox:    {ZEROING_TARGET - (sums[0] / NUM_SAMPLES):.7}')
-print(f'fuel:   {ZEROING_TARGET - (sums[1] / NUM_SAMPLES):.7}')
-print(f'helium: {ZEROING_TARGET - (sums[2] / NUM_SAMPLES):.7}')
+if __name__ == '__main__':
+    main()
