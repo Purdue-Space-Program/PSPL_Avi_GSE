@@ -68,19 +68,28 @@ def print_help() -> None:
     print('Help!')
 
 def send_command(cmd: str, args: list[Any] | None = None, sock = None) -> Status:
-    cmd = cmd.lower()
+    cmd   = cmd.lower()
     fargs = [float(a) for a in args] if args else []
 
     cmd_id = commands[cmd]
-    c_row = command_df[command_df['ID'] == cmd_id].squeeze()
+    c_row  = command_df[command_df['ID'] == cmd_id].squeeze()
 
     match Command(cmd_id):
-        case Command.SET_FU_UPPER_SETP | Command.SET_FU_LOWER_SETP | Command.SET_FU_UPPER_REDLINE | Command.SET_FU_LOWER_REDLINE:
+        case Command.SET_FU_UPPER_SETP     \
+            | Command.SET_FU_LOWER_SETP    \
+            | Command.SET_FU_UPPER_REDLINE \
+            | Command.SET_FU_LOWER_REDLINE:
+
             cmd_row = telem_df[telem_df['Name'] == 'PT-FU-201'].squeeze()
             if args:
                 fargs = [int(((((i - cmd_row['Zeroing Offset']) - cmd_row['Offset']) / cmd_row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
-        case Command.SET_OX_UPPER_SETP | Command.SET_OX_LOWER_SETP | Command.SET_OX_UPPER_REDLINE | Command.SET_OX_LOWER_REDLINE:
-            cmd_row = telem_df[telem_df['Name'] == 'PT-OX-201']
+
+        case Command.SET_OX_UPPER_SETP     \
+            | Command.SET_OX_LOWER_SETP    \
+            | Command.SET_OX_UPPER_REDLINE \
+            | Command.SET_OX_LOWER_REDLINE:
+
+            cmd_row = telem_df[telem_df['Name'] == 'PT-OX-201'].squeeze()
             if args:
                 fargs = [int(((((i - cmd_row['Zeroing Offset']) - cmd_row['Offset']) / cmd_row['Slope']) - constants.ADC_V_OFFSET) / float(constants.ADC_V_SLOPE)) for i in fargs]
 

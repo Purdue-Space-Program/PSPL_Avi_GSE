@@ -1,8 +1,8 @@
 import socket
 from time import time
 from random import randint
-from ..utils import get_telem_configs, get_logger
 import gse.configs.constants as constants
+from ..utils import get_telem_configs, get_logger
 log = get_logger('Telemetry Mock Server')
 
 telem_df = get_telem_configs()
@@ -30,9 +30,9 @@ def main():
                                 )
                                 conn.sendall(packet)
                 except ConnectionResetError:
-                    log.info('Client disconnected...')
+                    log.info(f'Client at {addr} disconnected.')
         except KeyboardInterrupt:
-            log.info('Shutting down server...')
+            log.info('Shutting down server.')
 
 
 if __name__ == "__main__":

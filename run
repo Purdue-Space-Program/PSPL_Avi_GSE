@@ -5,10 +5,10 @@ WINDOW_NAME="Avi Client"
 tmux new-window -n "$WINDOW_NAME" \
      "python3 -m gse.command"
 
-tmux split-window -h \
-     "python3 -m gse.bangbang"
+# tmux split-window -h \
+#      "python3 -m gse.bangbang"
 
-tmux split-window -v \
+tmux split-window -h \
      "python3 -m gse.telem"
 
 tmux select-window -t "$WINDOW_NAME"

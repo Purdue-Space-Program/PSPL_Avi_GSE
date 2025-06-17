@@ -2,7 +2,6 @@ from gse.configs.constants import SYNNAX_IP, SYNNAX_PORT, SYNNAX_USERNAME, SYNNA
 from logging import NOTSET, DEBUG, INFO, WARN, WARNING, ERROR, FATAL, CRITICAL
 import synnax as sy
 import pandas as pd
-import gse.mock.synnax_mock as sy_mock
 import logging
 
 from gse.configs import constants
@@ -27,7 +26,8 @@ def get_logger(name: str, level: int = logging.INFO):
 
 # Common Synnax client
 if constants.TEST_MODE:
-    sy_client = sy_mock.SynnaxMock()
+    from gse.mock.synnax_mock import SynnaxMock
+    sy_client = SynnaxMock()
 else:
     sy_client = sy.Synnax(
         host=SYNNAX_IP,
