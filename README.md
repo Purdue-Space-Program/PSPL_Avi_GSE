@@ -1,30 +1,21 @@
-# CMS Ground Software
-This repository contains the ground software for the Cratermaker Special rocket.
-It is meant to work in unison with the flight software.
-
-## Dependencies
-### uv
-#### Curl
-`curl -LsSf https://astral.sh/uv/install.sh | sh`
-#### pip
-`pip install uv`
-#### cargo
-`cargo install --git https://github.com/astral-sh/uv uv`
-
-### tmux (recommended)
-#### Debian
-`apt install tmux`
-#### Arch
-`pacman -S tmux`
-#### Other
-[Installation page](https://github.com/tmux/tmux/wiki/Installing)
+# PSPL Avi Ground Software
+This repo is in the middle of a major refactor, reference the `refactor` branch for
+the latest changes.
 
 ## Getting started
 ### Initialize Virtual Environment
+#### uv
 ```
 uv sync
 source .venv/bin/activate
 ```
+
+#### pyenv
+```
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
 ### Startup
 Run `./run` or `./tools/run_mock` depending on whether you are using the mock servers.
 
