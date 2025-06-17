@@ -10,9 +10,10 @@ uv sync
 source .venv/bin/activate
 ```
 
-#### pyenv
+#### pip and pyenv
 ```
 python3 -m venv .venv
+pip install -r requirements.txt
 source .venv/bin/activate
 ```
 
