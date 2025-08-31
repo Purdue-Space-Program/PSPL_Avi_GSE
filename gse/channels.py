@@ -1,8 +1,8 @@
 import synnax as sy
 from synnax.channel import ChannelKeys, ChannelName
 import pandas as pd
-import configs.constants as constants
-from utils import get_synnax_client, get_telem_configs, get_logger
+import gse.configs.constants as constants
+from gse.utils import get_synnax_client, get_telem_configs, get_logger
 
 log = get_logger('Channel Factory')
 
