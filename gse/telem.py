@@ -2,8 +2,9 @@ from socket import socket, AF_INET, SOCK_STREAM
 from struct import unpack
 from enum import IntEnum
 import gse.configs.constants as constants
-from gse.configs.constants import TELEM_FORMAT, TELEM_SIZE, SYNNAX_IP, SYNNAX_PORT, AVI_IP, AVI_CMD_PORT, AVI_TELEM_PORT
+from gse.configs.constants import TELEM_FORMAT, TELEM_SIZE, AVI_IP, AVI_TELEM_PORT
 import synnax as sy
+import pandas as pd
 
 from gse.utils import get_logger, get_synnax_client, get_telem_configs
 log = get_logger('Telemtry')
@@ -22,8 +23,7 @@ class Channel(IntEnum):
     BB_FU_LOWER_SETP   = 15
     BB_OX_UPPER_SETP   = 16
     BB_OX_LOWER_SETP   = 17
-    FREE_SPACE = 18
-
+    PI_TEMP = 123
 
 df = get_telem_configs()
 channels = [item for name in df['Name'] for item in [name, f'{name}_time']]
@@ -66,11 +66,14 @@ def main():
                                 deser_packet = unpack('<Qi4xQ', p)
 
                         value = float(deser_packet[1])
-                        row   = df[df['ID'] == id].squeeze()
+                        row   = df.set_index('ID').loc[id]
                         name  = row['Name']
 
-                        if row.get('Slope', None) is not None:
+                        slope = row['Slope']
+                        if pd.notna(slope) and id != Channel.PI_TEMP:
                             value = (((int(value) * constants.ADC_V_SLOPE) + constants.ADC_V_OFFSET) * row['Slope']) + row['Offset'] + row['Zeroing Offset']
+                        elif id == Channel.PI_TEMP:
+                            value = int(value) * row['Slope'] + row['Offset']
 
                         writer.write({
                             name: value,

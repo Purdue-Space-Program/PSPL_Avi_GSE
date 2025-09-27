@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+ip=${1-sedsdaq.ecn.purdue.edu}
+
+# scp -P 22 ../new_fsw/bin/fsw ../new_fsw/tools/fsw_telemetry_server root@$ip:/var/lib
+# ssh root@$ip "nohup /var/lib/fsw > /dev/null 2>&1 < /dev/null &"
+# ssh root@$ip "nohup /var/lib/fsw_telemetry_server > /dev/null 2>&1 < /dev/null &"
+
 WINDOW_NAME="Avi Client"
 
 tmux new-window -n "$WINDOW_NAME" \

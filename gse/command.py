@@ -29,6 +29,7 @@ class Command(IntEnum):
     SET_FU_LOWER_REDLINE = 17
     SET_OX_UPPER_REDLINE = 18
     SET_OX_LOWER_REDLINE = 19
+    REDLINE_RESET = 25
 
 class Status(IntEnum):
     SUCCESS = 0
