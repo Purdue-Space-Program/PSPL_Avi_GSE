@@ -10,13 +10,6 @@ uv sync
 source .venv/bin/activate
 ```
 
-#### pip and pyenv
-```
-python3 -m venv .venv
-pip install -r requirements.txt
-source .venv/bin/activate
-```
-
 ### Startup
 Run `./run` or `./tools/run_mock` depending on whether you are using the mock servers.
 
