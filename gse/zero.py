@@ -9,6 +9,7 @@ client = get_synnax_client()
 log.info(f'Connected to Synnax at {constants.SYNNAX_IP}:{constants.SYNNAX_PORT}')
 
 channel_list = list(telem_df['Name'])
+channel_list.append('FMS')
 
 def main():
     # key : [count, sum]
@@ -25,7 +26,8 @@ def main():
         for ch in channel_list:
             vals = channel_avgs[ch]
             if vals[0] != 0:
-                log.info(f'{ch}: {-(vals[1] / vals[0]) + 14.7}')
+                # log.info(f'{ch}: {-(vals[1] / vals[0]) + 14.7}')
+                log.info(f'{ch}: {(vals[1] / vals[0])}')
 
 if __name__ == '__main__':
     main()

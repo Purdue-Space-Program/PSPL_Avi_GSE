@@ -6,36 +6,14 @@ import logging
 
 from gse.configs import constants
 
-LOGGING_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
-
-def get_logger(name: str, level: int = logging.INFO):
-    log = logging.getLogger(name)
-    log.setLevel(level)
-
-    # only add handler if it doesn't already have one
-    if not log.handlers:
-        formatter = logging.Formatter(LOGGING_FORMAT)
-        ch = logging.StreamHandler()
-        ch.setFormatter(formatter)
-        log.addHandler(ch)
-
-    # prevent double‑logging via root
-    log.propagate = False
-
-    return log
-
 # Common Synnax client
-if constants.TEST_MODE:
-    from gse.mock.synnax_mock import SynnaxMock
-    sy_client = SynnaxMock()
-else:
-    sy_client = sy.Synnax(
-        host=SYNNAX_IP,
-        port=SYNNAX_PORT,
-        username=SYNNAX_USERNAME,
-        password=SYNNAX_PASSWORD,
-        secure=False,
-    )
+sy_client = sy.Synnax(
+    host=SYNNAX_IP,
+    port=SYNNAX_PORT,
+    username=SYNNAX_USERNAME,
+    password=SYNNAX_PASSWORD,
+    secure=False,
+)
 def get_synnax_client():
     return sy_client
 
@@ -46,3 +24,34 @@ def get_telem_configs():
 command_config_df = pd.read_excel('gse/configs/CMS_Avionics_Channels.xlsx', sheet_name='command_channels')
 def get_command_configs():
     return command_config_df
+
+LOGGING_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
+
+log_channel = sy_client.channels.create(
+    name="avi_logs",
+    data_type=sy.DataType.STRING,
+    virtual=True,
+    retrieve_if_name_exists=True,
+)
+
+writer = sy_client.open_writer(
+    start=sy.TimeStamp.now(),
+    channels=[log_channel.key],
+)
+def get_logger(name: str):
+    class SynnaxLogger:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def info(self, msg: str):
+            writer.write({
+                log_channel.key: f'[INFO] ({self.name}) {msg}',
+            })
+
+        def error(self, msg: str):
+            writer.write({
+                log_channel.key: f'[ERROR] ({self.name}) {msg}',
+            })
+
+    return SynnaxLogger(name)
+

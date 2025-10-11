@@ -9,20 +9,12 @@ PT_HE_201_ZERO_OFFSET = 0
 ADC_V_SLOPE  =  0.00000000235714724017
 ADC_V_OFFSET = -0.01390133824020600000
 
-##################
-TEST_MODE = False
-##################
-
 AVI_CMD_PORT   = 2703
 AVI_TELEM_PORT = 2702
 SYNNAX_PORT    = 2701
 
-if TEST_MODE:
-    SYNNAX_IP = 'localhost'
-    AVI_IP    = 'localhost'
-else:
-    SYNNAX_IP = '10.165.89.106'
-    AVI_IP    = '10.165.89.106'
+SYNNAX_IP = '10.165.89.106'
+AVI_IP    = '10.165.89.106'
 
 SYNNAX_USERNAME = "Bill"
 SYNNAX_PASSWORD = "Bill"
