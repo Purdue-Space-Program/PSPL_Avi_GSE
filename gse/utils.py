@@ -1,10 +1,9 @@
-from gse.configs.constants import SYNNAX_IP, SYNNAX_PORT, SYNNAX_USERNAME, SYNNAX_PASSWORD
+from .configs.constants import SYNNAX_IP, SYNNAX_PORT, SYNNAX_USERNAME, SYNNAX_PASSWORD
 from logging import NOTSET, DEBUG, INFO, WARN, WARNING, ERROR, FATAL, CRITICAL
 import synnax as sy
 import pandas as pd
+from pathlib import Path
 import logging
-
-from gse.configs import constants
 
 # Common Synnax client
 sy_client = sy.Synnax(
@@ -17,11 +16,11 @@ sy_client = sy.Synnax(
 def get_synnax_client():
     return sy_client
 
-telem_config_df = pd.read_excel('gse/configs/CMS_Avionics_Channels.xlsx', sheet_name='telem_channels')
+telem_config_df = pd.read_excel(Path(__file__).parent / 'configs' / 'CMS_Avionics_Channels.xlsx', sheet_name='telem_channels')
 def get_telem_configs():
     return telem_config_df
 
-command_config_df = pd.read_excel('gse/configs/CMS_Avionics_Channels.xlsx', sheet_name='command_channels')
+command_config_df = pd.read_excel(Path(__file__).parent / 'configs' / 'CMS_Avionics_Channels.xlsx', sheet_name='command_channels')
 def get_command_configs():
     return command_config_df
 

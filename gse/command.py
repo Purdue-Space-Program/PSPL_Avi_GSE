@@ -2,8 +2,8 @@ from enum import IntEnum
 from struct import calcsize, pack, unpack
 from socket import socket, AF_INET, SOCK_STREAM
 from typing import Any
-import gse.configs.constants as constants
-import gse.utils as utils
+from .configs import constants
+from . import utils
 
 telem_df   = utils.get_telem_configs()
 command_df = utils.get_command_configs()
