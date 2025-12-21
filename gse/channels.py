@@ -7,9 +7,9 @@ from gse.utils import get_synnax_client, get_telem_configs, get_logger
 log = get_logger('Channel Factory')
 
 ducers = [
-    'PT-OX-201',
-    'PT-FU-201',
-    'PT-HE-201',
+    'PT_OX_201',
+    'PT_FU_201',
+    'PT_HE_201',
 ]
 
 client = get_synnax_client()
@@ -114,8 +114,8 @@ for _, row in df.iterrows():
     log.info(log_msg)
 
 command_channels = [
-    constants.FUEL_SOLENOID_NAME + '-CMD',
-    constants.LOX_SOLENOID_NAME + '-CMD',
+    constants.FUEL_SOLENOID_NAME + '_CMD',
+    constants.LOX_SOLENOID_NAME + '_CMD',
     constants.BB_OPEN_CHANNEL_NAME,
     constants.BB_ISO_CHANNEL_NAME,
     constants.BB_REG_CHANNEL_NAME,

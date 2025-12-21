@@ -8,8 +8,8 @@ client = get_synnax_client()
 log.info(f'Connected to Synnax at {constants.SYNNAX_IP}:{constants.SYNNAX_PORT}')
 
 channels = [
-    constants.FUEL_SOLENOID_NAME + '-CMD',
-    constants.LOX_SOLENOID_NAME  + '-CMD',
+    constants.FUEL_SOLENOID_NAME + '_CMD',
+    constants.LOX_SOLENOID_NAME  + '_CMD',
     constants.BB_OPEN_CHANNEL_NAME,
     constants.BB_ISO_CHANNEL_NAME,
     constants.BB_REG_CHANNEL_NAME,
@@ -27,7 +27,7 @@ def main():
     with client.open_streamer(channels) as s:
         for frame in s:
             frame = Frame(frame)
-            for f in frame[constants.FUEL_SOLENOID_NAME + '-CMD']:
+            for f in frame[constants.FUEL_SOLENOID_NAME + '_CMD']:
                 if f == 1:
                     cmd.send_command(cmd.Command.SET_FU_STATE_OPEN.name)
                     log.info('Fuel: OPEN')
@@ -35,7 +35,7 @@ def main():
                     cmd.send_command(cmd.Command.SET_FU_STATE_ISOLATE.name)
                     log.info('Fuel: CLOSE')
 
-            for f in frame[constants.LOX_SOLENOID_NAME + '-CMD']:
+            for f in frame[constants.LOX_SOLENOID_NAME + '_CMD']:
                 if f == 1:
                     cmd.send_command(cmd.Command.SET_OX_STATE_OPEN.name)
                     log.info('Lox: OPEN')
