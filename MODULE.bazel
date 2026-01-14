@@ -1,0 +1,13 @@
+module(
+    name = "liquids_gse",
+    version = "0.0.0",
+)
+
+bazel_dep(name = "synnax", version = "0.46.0")
+git_override(
+    module_name = "synnax",
+    remote = "https://github.com/synnaxlabs/synnax.git",
+    commit = "e2a65f201990c34a1e696db52d1b829f33a5f80f"
+)
+
+bazel_dep(name = "nlohmann_json", version = "3.12.0")

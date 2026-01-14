@@ -1,0 +1,3 @@
+[submodule "pspl_ops_config"]
+	path = pspl_ops_config
+	url = git@github.com:Purdue-Space-Program/pspl_ops_config.git
