@@ -1,6 +1,6 @@
 #pragma once
 
-#include <client/cpp/synnax.h>
+#include "client/cpp/synnax.h"
 
 #include <optional>
 
