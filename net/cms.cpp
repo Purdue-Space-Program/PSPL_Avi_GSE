@@ -10,6 +10,7 @@ extern "C" {
 }
 
 #include <fstream>
+#include <iostream>
 
 #include <nlohmann/json.hpp>
 
@@ -19,8 +20,10 @@ std::string CMDNET_PORT_STR;
 std::string TELEM_PORT_STR;
 std::string FC_HOSTNAME;
 
-int initialize_config() {
+int initialize_net_config() {
     std::filesystem::path net_config = "pspl_ops_config/cms/network.json";
+
+    std::cout << "Initializing network config using: " << net_config << '\n';
 
     std::ifstream config_file(net_config);
     if (!config_file.is_open()) {

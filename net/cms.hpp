@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <string>
 
-int initialize_config();
+int initialize_net_config();
 
 //! Returns CommandNet socket, None if non-existant
 std::optional<int> get_cmdnet_sock();
