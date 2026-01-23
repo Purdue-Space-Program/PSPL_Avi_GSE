@@ -12,10 +12,12 @@ cc_library(
         "commands.hpp",
         "telem.hpp",
     ],
+    includes = [
+        "external/synnax+/client/cpp",
+    ],
     deps = [
-        "@synnax//client/cpp:synnax",
         "@nlohmann_json//:json",
+        "@synnax//client/cpp:synnax",
     ],
     visibility = ["//visibility:public"],
-    includes = ["external/synnax+"],
 )
