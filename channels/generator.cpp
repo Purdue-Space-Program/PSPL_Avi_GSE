@@ -1,4 +1,4 @@
-#include <client/cpp/synnax.h>
+#include "client/cpp/synnax.h"
 #include <nlohmann/json.hpp>
 
 #include "channels/generator.hpp"
