@@ -1,7 +1,7 @@
 #include <sys/socket.h>
 
 #include <nlohmann/json.hpp>
-#include <client/cpp/synnax.h>
+#include "client/cpp/synnax.h"
 
 #include "channels/generator.hpp"
 #include "channels/synnax.hpp"
@@ -16,6 +16,7 @@ void forward_commands(synnax::Synnax &client, int command_socket, std::filesyste
 
     if (!avi_file.is_open()) {
         std::cout << "Error! Not able to open command config file!" << '\n';
+        shutdown.store(true);
         return;
     }
 
@@ -37,6 +38,11 @@ void forward_commands(synnax::Synnax &client, int command_socket, std::filesyste
     if (streamer_ret.second.ok()) {
         auto streamer = std::move(streamer_ret.first);
         while (true) {
+            if (shutdown.load()) {
+                std::cout << "Received shutdown command!!" << '\n';
+                return;
+            }
+
             auto read = streamer.read();
 
             if (read.second.ok()) {
@@ -66,7 +72,6 @@ void forward_commands(synnax::Synnax &client, int command_socket, std::filesyste
                         auto v = c.second.at(0);
 
                         double raw_val = 0.0;
-                        bool found = true;
 
                         if      (auto* val = std::get_if<double>(&v))         raw_val = (double)*val;
                         else if (auto* val = std::get_if<float>(&v))          raw_val = (double)*val;
@@ -80,36 +85,40 @@ void forward_commands(synnax::Synnax &client, int command_socket, std::filesyste
                         else if (auto* val = std::get_if<unsigned char>(&v))  raw_val = (double)*val;
                         else {
                             std::cout << "Unknown or empty variant state" << '\n';
-                            found = false;
+                            shutdown.store(true);
+                            return;
                         }
 
-                        if (found) {
-                            double calibrated = ((((raw_val - channel_offset - channel_zero_offset) / channel_slope)) - ADC_V_OFFSET) * ADC_V_SLOPE;
+                        double calibrated = ((((raw_val - channel_offset - channel_zero_offset) / channel_slope)) - ADC_V_OFFSET) * ADC_V_SLOPE;
 
-                            std::uint64_t converted = static_cast<std::uint64_t>(calibrated);
+                        std::uint64_t converted = static_cast<std::uint64_t>(calibrated);
 
-                            std::memcpy(buffer.data() + 1, &converted, sizeof(converted));
-                        }
+                        std::memcpy(buffer.data() + 1, &converted, sizeof(converted));
                     }
                     buffer[0] = channel_id;
 
+                    // error, make < 1
                     if (send(command_socket, buffer.data(), buffer.size(), 0) <= 1) {
                         std::cout << "Error sending on Command socket!" << '\n';
                         shutdown.store(true);
                         return;
                     }
 
-                    if (recv(command_socket, buffer.data(), 1, 0) <= 1) {
-                        std::cout << "Error sending on Telemetry socket!" << '\n';
+                    if (recv(command_socket, buffer.data(), 1, 0) < 1) {
+                        std::cout << "Error receiving on Command socket!" << '\n';
                         shutdown.store(true);
                         return;
                     }
                 }
             } else {
-                std::cout << "Bad frame detected. Continuing." << '\n';
+                std::cout << "Bad frame detected." << '\n';
+                shutdown.store(true);
+                return;
             }
         }
     } else {
         std::cout << "Problem opening streamer..." << '\n';
+        shutdown.store(true);
+        return;
     }
 }
