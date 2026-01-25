@@ -3,6 +3,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <sys/socket.h>
+
 #include <array>
 #include <fstream>
 #include <optional>
@@ -48,9 +50,10 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
 
         std::string name;
         std::optional<std::string> unit;
-        std::string type;
+        DataType type;
         std::optional<double> slope;
         std::optional<double> offset;
+        synnax::Channel sy_channel;
     };
 
     std::unordered_map<std::uint8_t, ChannelConfig> telem_configs;
@@ -71,7 +74,18 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
             : std::nullopt;
 
         config.name = key;
-        config.type = value.at("channel_type").get<std::string>();
+
+        // assuming good
+        config.type = type_from_str(value.at("channel_type").get<std::string>()).value();
+
+        // assuming it exists which probably isnt good
+        auto ret = client.channels.retrieve(key);
+        if (!ret.second.ok()) {
+            std::cout << "Could not find channel " << key << '!' << '\n';
+            shutdown.store(true);
+            return;
+        }
+        config.sy_channel = client.channels.retrieve(key).first;
 
         telem_configs.insert_or_assign(value.at("id").get<std::uint8_t>(), config);
     }
@@ -80,6 +94,7 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
     std::pair<synnax::Writer, xerrors::Error> writer = client.telem.open_writer(writer_config);
 
     if (writer.second.ok()) {
+        int ret = 0;
         while (true) {
             if (shutdown.load()) {
                 std::cout << "Received shutdown command!!" << '\n';
@@ -88,8 +103,17 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
 
             std::array<gse::TelemetryPacket, 25> packets;
             // need to make non-blocking :(
-            auto ret = read(telem_socket, packets.data(), sizeof(gse::TelemetryPacket) * 25);
-            if (ret < 1 && ret != (sizeof(gse::TelemetryPacket) * 25)) {
+
+            gse::TelemetryPacket _dummy;
+            if ((ret % sizeof(gse::TelemetryPacket)) != 0) {
+                auto leftover_size = sizeof(gse::TelemetryPacket) - ret % sizeof(gse::TelemetryPacket);
+                recv(telem_socket, &_dummy, leftover_size, 0);
+                std::cout << "Cancelling " << leftover_size << " bytes!" << '\n';
+            }
+
+            ret = recv(telem_socket, packets.data(), sizeof(gse::TelemetryPacket) * 25, 0);
+            if (ret != 600) std::cout << ret << '\n';
+            if (ret < 1) {
                 std::cout << "TCP read error!" << '\n';
                 shutdown.store(true);
                 return;
@@ -101,36 +125,61 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
 
                 if (telem_configs.count(packet.sensor_id) == 0) {
                     std::cout << "Could not find channel of ID: " << packet.sensor_id << '\n';
-                    continue;
-                }
-
-                auto channel_config = telem_configs[packet.sensor_id];
-
-                double calibrated_data = packet.data;
-                if (channel_config.slope.has_value()) {
-                    if (channel_config.unit == "psi") {
-                        double data_float = static_cast<double>(static_cast<std::int32_t>(packet.data));
-                        double v_calibrated_data = data_float / ADC_V_SLOPE + ADC_V_OFFSET;
-                        calibrated_data = v_calibrated_data * channel_config.slope.value() + channel_config.offset.value();
-                    } else {
-                        calibrated_data = packet.data * channel_config.slope.value() + channel_config.offset.value();
-                    }
-                }
-
-                auto data_type = type_from_text(channel_config.type).value();
-                telem::SampleValue value = calibrated_data;
-
-                synnax::Frame frame(2);
-
-                auto sy_ch = client.channels.retrieve(channel_config.name);
-                if (!sy_ch.second.ok()) {
-                    std::cout << "Failed to find channel of name: " << channel_config.name << '\n';
                     shutdown.store(true);
                     return;
                 }
 
-                frame.emplace(sy_ch.first.key, telem::Series(value));
-                frame.emplace(sy_ch.first.index, telem::Series(telem::TimeStamp(static_cast<std::int64_t>(packet.timestamp))));
+                auto channel_config = telem_configs[packet.sensor_id];
+
+                telem::SampleValue value;
+
+                switch (channel_config.type) {
+                    case DataType::FLOAT64:
+                        value = static_cast<double>(packet.data);
+                        break;
+                    case DataType::FLOAT32:
+                        value = static_cast<float>(packet.data);
+                        break;
+                    case DataType::UINT8:
+                        value = static_cast<std::uint8_t>(packet.data);
+                        break;
+                    case DataType::UINT16:
+                        value = static_cast<std::uint16_t>(packet.data);
+                        break;
+                    case DataType::UINT32:
+                        value = static_cast<std::uint32_t>(packet.data);
+                        break;
+                    case DataType::UINT64:
+                        value = static_cast<std::uint64_t>(packet.data);
+                        break;
+                    case DataType::INT8:
+                        value = static_cast<std::int8_t>(packet.data);
+                        break;
+                    case DataType::INT16:
+                        value = static_cast<std::int16_t>(packet.data);
+                        break;
+                    case DataType::INT32:
+                        value = static_cast<std::int32_t>(packet.data);
+                        break;
+                    case DataType::INT64:
+                        value = static_cast<std::int64_t>(packet.data);
+                        break;
+                }
+
+                if (channel_config.slope.has_value()) {
+                    if (channel_config.unit == "psi") {
+                        double data_float = static_cast<double>(static_cast<std::int32_t>(packet.data));
+                        double v_calibrated_data = data_float / ADC_V_SLOPE + ADC_V_OFFSET;
+                        value = v_calibrated_data * channel_config.slope.value() + channel_config.offset.value();
+                    } else {
+                        value = packet.data * channel_config.slope.value() + channel_config.offset.value();
+                    }
+                }
+
+                synnax::Frame frame(2);
+
+                frame.emplace(channel_config.sy_channel.key, telem::Series(value));
+                frame.emplace(channel_config.sy_channel.index, telem::Series(telem::TimeStamp(static_cast<std::int64_t>(packet.timestamp))));
 
                 auto write_ret = writer.first.write(frame);
                 if (!write_ret.ok()) {
@@ -145,4 +194,21 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
         shutdown.store(true);
         return;
     }
+}
+
+std::optional<DataType> type_from_str(std::string str) {
+    std::transform(str.begin(), str.end(), str.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+    
+    if (str == "f64") return DataType::FLOAT64;
+    else if (str == "f32") return DataType::FLOAT32;
+    else if (str == "u8") return DataType::UINT8;
+    else if (str == "u16") return DataType::UINT16;
+    else if (str == "u32") return DataType::UINT32;
+    else if (str == "u64") return DataType::UINT64;
+    else if (str == "i8") return DataType::INT8;
+    else if (str == "i16") return DataType::INT16;
+    else if (str == "i32") return DataType::INT32;
+    else if (str == "i64") return DataType::INT64;
+    else return std::nullopt;
 }
