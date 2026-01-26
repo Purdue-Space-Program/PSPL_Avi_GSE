@@ -97,8 +97,7 @@ void forward_commands(synnax::Synnax &client, int command_socket, std::filesyste
                     }
                     buffer[0] = channel_id;
 
-                    // error, make < 1
-                    if (send(command_socket, buffer.data(), buffer.size(), 0) <= 1) {
+                    if (send(command_socket, buffer.data(), buffer.size(), 0) < 1) {
                         std::cout << "Error sending on Command socket!" << '\n';
                         shutdown.store(true);
                         return;
