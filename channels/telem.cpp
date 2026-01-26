@@ -94,6 +94,7 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
     std::pair<synnax::Writer, xerrors::Error> writer = client.telem.open_writer(writer_config);
 
     if (writer.second.ok()) {
+
         int ret = 0;
         while (true) {
             if (shutdown.load()) {
@@ -112,7 +113,6 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
             }
 
             ret = recv(telem_socket, packets.data(), sizeof(gse::TelemetryPacket) * 25, 0);
-            if (ret != 600) std::cout << ret << '\n';
             if (ret < 1) {
                 std::cout << "TCP read error!" << '\n';
                 shutdown.store(true);
