@@ -6,7 +6,7 @@
 trap "kill 0" EXIT
 
 synnax start -im --no-driver &
-nc -lk 2703 &
-python3 mock/main.py &
+python3 mock/command.py &
+python3 mock/telem.py &
 
 wait

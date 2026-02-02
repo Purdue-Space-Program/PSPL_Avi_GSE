@@ -28,8 +28,9 @@ auto main() -> int
     << '\n';
 
     initialize_net_config();
+
+    std::cout << "Attempting to find flight computer and Synnax..." << '\n';
     while (true) {
-        std::cout << "Attempting to find flight computer and Synnax..." << '\n';
 
         bool synnax_connected = connect_to_synnax();
 

@@ -183,7 +183,7 @@ void telem_proxy(synnax::Synnax &client, int telem_socket, std::filesystem::path
 
                 auto write_ret = writer.first.write(frame);
                 if (!write_ret.ok()) {
-                    std::cout << "Failed write: " << write_ret.message() << '\n';
+                    std::cout << "Failed write on channel " << channel_config.name << ": "<< write_ret.message() << '\n';
                     shutdown.store(true);
                     return;
                 }
